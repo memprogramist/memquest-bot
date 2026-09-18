@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>memprogramist — игры</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0d0d0f;
+    --card: #17171c;
+    --card-hover: #1f1f26;
+    --text: #e8e8ec;
+    --muted: #8a8a96;
+    --accent: #4ade80;
+    --accent-dim: #22c55e;
+    --border: #26262e;
+    --danger: #ef4444;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .screen {
+    display: none;
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 100vh;
+    animation: fade 0.3s ease;
+  }
+  .screen.active { display: block; }
+
+  @keyframes fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .header {
+    text-align: center;
+    padding: 30px 0 20px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-top: 6px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin: 24px 0 12px;
+    font-weight: 600;
+  }
+
+  .game-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+  }
+  .game-card:active {
+    background: var(--card-hover);
+    transform: scale(0.98);
+  }
+  .game-card .emoji {
+    font-size: 36px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+  .game-card .info h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .game-card .info p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .game-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0 16px;
+  }
+  .back-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .back-btn:active { background: var(--card-hover); }
+  .game-top h2 {
+    font-size: 16px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .scene-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 20px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    animation: fade 0.4s ease;
+  }
+  .scene-box p {
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .choice-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 16px 18px;
+    border-radius: 12px;
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .choice-btn:active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    transform: scale(0.98);
+  }
+  .choice-btn::before {
+    content: "›";
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .choice-btn:active::before { color: #000; }
+
+  .end-screen {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .end-screen .big-emoji {
+    font-size: 72px;
+    margin-bottom: 20px;
+    display: block;
+  }
+  .end-screen h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .end-screen p {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .end-screen .btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: background 0.2s;
+  }
+  .end-screen .btn:active { background: var(--accent-dim); }
+  .end-screen .btn.secondary {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .footer {
+    text-align: center;
+    padding: 30px 0 20px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div id="screen-main" class="screen active">
+  <div class="header">
+    <h1>mem<span>programist</span></h1>
+    <p>Мини-игры в Telegram</p>
+  </div>
+
+  <div class="section-title">Истории</div>
+  <div id="games-list"></div>
+
+  <div class="footer">
+    by <a href="https://t.me/memprogramist">memprogramist</a>
+  </div>
+</div>
+
+<div id="screen-game" class="screen">
+  <div class="game-top">
+    <button class="back-btn" onclick="goMain()">‹</button>
+    <h2 id="game-title">История</h2>
+  </div>
+  <div class="scene-box">
+    <p id="scene-text"></p>
+  </div>
+  <div class="choices" id="choices"></div>
+</div>
+
+<div id="screen-end" class="screen">
+  <div class="end-screen">
+    <span class="big-emoji" id="end-emoji">🎉</span>
+    <h2 id="end-title">Победа!</h2>
+    <p id="end-text"></p>
+    <button class="btn" onclick="restartGame()">Пройти заново</button>
+    <button class="btn secondary" onclick="goMain()">К списку игр</button>
+  </div>
+</div>
+
+<script>
+const STORIES = {
+  escape: {
+    title: "Побег из комнаты",
+    emoji: "🚪",
+    description: "Ты просыпаешься в незнакомом месте. Дверь заперта. Найди код и выберись.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты открываешь глаза. Потолок незнакомый. Комната маленькая, света мало. Дверь заперта. На столе — телефон и записка.",
+        choices: [
+          { text: "Прочитать записку", next: "note" },
+          { text: "Осмотреть комнату", next: "room" },
+          { text: "Взять телефон", next: "phone" }
+        ]
+      },
+      note: {
+        text: "«Код от двери — 4 цифры. Первая — сколько окон в комнате. Остальные найдёшь сам». Почерк дрожащий.",
+        choices: [
+          { text: "Осмотреть комнату", next: "room" },
+          { text: "Посмотреть на телефон", next: "phone" }
+        ]
+      },
+      room: {
+        text: "Одно окно, забито досками. Кровать, стол, стул. Под кроватью — коробка. На стене — часы, стоят на 3:15.",
+        choices: [
+          { text: "Открыть коробку", next: "box" },
+          { text: "Посмотреть на часы", next: "clock" },
+          { text: "Вернуться к столу", next: "note" }
+        ]
+      },
+      phone: {
+        text: "Телефон разряжен. На экране — трещина. Кнопка включения не реагирует. Рядом лежит зарядка, но розетки нет.",
+        choices: [
+          { text: "Искать розетку", next: "room" },
+          { text: "Отложить телефон", next: "note" }
+        ]
+      },
+      box: {
+        text: "В коробке — старая фотография и ключ. На фото — ты и незнакомый человек. На обороте написано: «7».",
+        choices: [
+          { text: "Взять ключ", next: "key" },
+          { text: "Изучить фото", next: "photo" }
+        ]
+      },
+      clock: {
+        text: "Часы стоят на 3:15. Стекло треснуло. За ним что-то есть — сложенный листок.",
+        choices: [
+          { text: "Достать листок", next: "paper" },
+          { text: "Оставить часы", next: "room" }
+        ]
+      },
+      key: {
+        text: "Ключ холодный, тяжёлый. На нём выгравирована цифра «2». Возможно, это часть кода.",
+        choices: [
+          { text: "Попробовать дверь", next: "door" },
+          { text: "Искать дальше", next: "room" }
+        ]
+      },
+      photo: {
+        text: "На фото — ты и человек в капюшоне. Лица не видно. Дата в углу: 15.03. Под фото — ещё одна цифра: «5».",
+        choices: [
+          { text: "Взять ключ", next: "key" },
+          { text: "Искать дальше", next: "room" }
+        ]
+      },
+      paper: {
+        text: "На листке — цифра «1». И подпись: «Последняя — сколько букв в слове ДВЕРЬ».",
+        choices: [
+          { text: "Попробовать дверь", next: "door" },
+          { text: "Искать дальше", next: "room" }
+        ]
+      },
+      door: {
+        text: "На двери — кодовый замок. 4 цифры. Ты знаешь: окон — 1, на ключе — 2, на фото — 5, в слове ДВЕРЬ — 4 буквы.",
+        choices: [
+          { text: "Ввести 1-2-5-4", next: "win" },
+          { text: "Ввести 1-5-2-4", next: "fail" },
+          { text: "Ввести 4-2-5-1", next: "fail" }
+        ]
+      },
+      win: {
+        text: "Замок щёлкает. Дверь открывается. За ней — коридор и свет. Ты свободен.",
+        end: true,
+        endEmoji: "🎉",
+        endTitle: "Победа!",
+        endText: "Ты выбрался из комнаты. Но что это было за место? И кто оставил записку?"
+      },
+      fail: {
+        text: "Замок издаёт резкий писк. Красный свет. Неверный код. Дверь остаётся запертой.",
+        end: true,
+        endEmoji: "💀",
+        endTitle: "Провал",
+        endText: "Код не подошёл. Комната осталась запертой. Попробуй ещё раз."
+      }
+    }
+  },
+
+  hacker: {
+    title: "Взлом системы",
+    emoji: "💻",
+    description: "Ты — хакер. Проник в серверную корпорации. Скачай данные и уйди незамеченным.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты в тёмной серверной. Терминал светится зелёным. На экране — запрос пароля. У тебя 3 попытки.",
+        choices: [
+          { text: "Запустить брутфорс", next: "brute" },
+          { text: "Поискать пароль на столе", next: "desk" },
+          { text: "Подключить флешку", next: "usb" }
+        ]
+      },
+      brute: {
+        text: "Брутфорс запущен. Система начинает тормозить. На экране — предупреждение: «Обнаружена атака». Осталось 60 секунд.",
+        choices: [
+          { text: "Прервать и искать вручную", next: "desk" },
+          { text: "Рискнуть — ещё немного", next: "risk" }
+        ]
+      },
+      desk: {
+        text: "На столе — стикер: «Пароль: дата рождения дочки». Рядом фото девочки, на обороте — 12.04.2019.",
+        choices: [
+          { text: "Ввести 12.04.2019", next: "login" },
+          { text: "Ввести 12042019", next: "login" }
+        ]
+      },
+      usb: {
+        text: "Флешка вставлена. На ней — автозапуск. Но система запрашивает права администратора.",
+        choices: [
+          { text: "Ввести пароль вручную", next: "desk" },
+          { text: "Выдернуть флешку", next: "start" }
+        ]
+      },
+      risk: {
+        text: "Брутфорс сработал. Доступ получен. Но в логах остался твой след. Охрана уже едет.",
+        choices: [
+          { text: "Скачать данные и бежать", next: "data" },
+          { text: "Стереть логи", next: "wipe" }
+        ]
+      },
+      login: {
+        text: "Пароль подошёл. Доступ к базе открыт. Внутри — миллионы записей клиентов.",
+        choices: [
+          { text: "Скачать всё", next: "data" },
+          { text: "Скачать только нужное", next: "safe" }
+        ]
+      },
+      wipe: {
+        text: "Логи стёрты. Но время уходит. Ты слышишь шаги за дверью.",
+        choices: [
+          { text: "Скачать данные", next: "data" },
+          { text: "Уходить пустым", next: "escape_empty" }
+        ]
+      },
+      data: {
+        text: "Данные скачиваются. 80%... 90%... Шаги всё ближе. Дверь вот-вот откроется.",
+        choices: [
+          { text: "Дождаться 100%", next: "win" },
+          { text: "Выхватить флешку и бежать", next: "partial" }
+        ]
+      },
+      safe: {
+        text: "Ты скачал только то, что нужно. Быстро, чисто, без следов. Пора уходить.",
+        choices: [
+          { text: "Через запасной выход", next: "win" },
+          { text: "Через главный вход", next: "caught" }
+        ]
+      },
+      escape_empty: {
+        text: "Ты ушёл без данных. Задание провалено, но ты жив.",
+        end: true,
+        endEmoji: "😶",
+        endTitle: "Провал",
+        endText: "Заказчик будет недоволен. Но зато ты на свободе."
+      },
+      partial: {
+        text: "Ты выбежал с флешкой. На ней — половина данных. Не идеально, но лучше, чем ничего.",
+        end: true,
+        endEmoji: "🏃",
+        endTitle: "Частичный успех",
+        endText: "Ты ушёл. Данные неполные, но заказчик примет. В этот раз."
+      },
+      win: {
+        text: "Ты растворяешься в ночи. Данные у тебя. Никто не знает, кто это сделал.",
+        end: true,
+        endEmoji: "🕶️",
+        endTitle: "Успех!",
+        endText: "Чистая работа. Ты — призрак в системе."
+      },
+      caught: {
+        text: "На выходе тебя ждут. Охрана, полиция, наручники. Всё кончено.",
+        end: true,
+        endEmoji: "🚨",
+        endTitle: "Провал",
+        endText: "Ты попался. Данные изъяты. Свобода — тоже."
+      }
+    }
+  },
+
+  zombie: {
+    title: "Зомби-апокалипсис",
+    emoji: "🧟",
+    description: "Город захвачен. Ты в квартире. Еда кончается. Нужно решить — остаться или бежать.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты в квартире на 5 этаже. За окном — тишина. Внизу бродят они. Еды осталось на 2 дня.",
+        choices: [
+          { text: "Остаться и укрепиться", next: "stay" },
+          { text: "Собрать рюкзак и уходить", next: "pack" },
+          { text: "Посмотреть в подъезд", next: "stairs" }
+        ]
+      },
+      stay: {
+        text: "Ты баррикадируешь дверь. Но слышишь — в соседней квартире кто-то есть. Живой.",
+        choices: [
+          { text: "Постучать к соседу", next: "neighbor" },
+          { text: "Игнорировать", next: "alone" }
+        ]
+      },
+      pack: {
+        text: "Рюкзак собран: вода, консервы, нож, аптечка. Пора решать — куда идти.",
+        choices: [
+          { text: "К машине во дворе", next: "car" },
+          { text: "К метро", next: "metro" },
+          { text: "К крыше", next: "roof" }
+        ]
+      },
+      stairs: {
+        text: "В подъезде темно. На 3 этаже — труп. На 1 этаже — открытая дверь. Слышны стоны.",
+        choices: [
+          { text: "Идти к машине", next: "car" },
+          { text: "Вернуться в квартиру", next: "stay" }
+        ]
+      },
+      neighbor: {
+        text: "Сосед открывает. Он бывший военный. У него есть оружие и план.",
+        choices: [
+          { text: "Объединиться", next: "team" },
+          { text: "Забрать его припасы", next: "betray" }
+        ]
+      },
+      alone: {
+        text: "Ты остаёшься один. Ночью слышишь скрежет у двери. Они знают, что ты здесь.",
+        choices: [
+          { text: "Бежать через окно", next: "window" },
+          { text: "Защищаться", next: "fight" }
+        ]
+      },
+      team: {
+        text: "Вместе с соседом вы пробиваетесь к военной базе. По пути — толпа зомби.",
+        choices: [
+          { text: "Прорываться с боем", next: "win" },
+          { text: "Обойти через лес", next: "forest" }
+        ]
+      },
+      betray: {
+        text: "Ты забрал припасы, но сосед выжил. Теперь он — твой враг. И он знает, где ты живёшь.",
+        choices: [
+          { text: "Бежать из города", next: "forest" },
+          { text: "Вернуться и добить", next: "dark" }
+        ]
+      },
+      car: {
+        text: "Машина на месте. Но аккумулятор сел. Рядом — другая машина, с ключами в замке.",
+        choices: [
+          { text: "Взять вторую машину", next: "drive" },
+          { text: "Искать аккумулятор", next: "garage" }
+        ]
+      },
+      metro: {
+        text: "Вход в метро завален. Но есть вентиляция. Внутри темно и пахнет сыростью.",
+        choices: [
+          { text: "Лезть в вентиляцию", next: "tunnel" },
+          { text: "Идти к машине", next: "car" }
+        ]
+      },
+      roof: {
+        text: "С крыши видно весь город. Горизонт в огне. Вертолёт кружит над центром.",
+        choices: [
+          { text: "Идти к вертолёту", next: "heli" },
+          { text: "Спуститься и уехать", next: "car" }
+        ]
+      },
+      window: {
+        text: "Ты прыгаешь на козырёк. Нога хрустит. Но ты жив. Зомби сзади.",
+        choices: [
+          { text: "Хромать к машине", next: "car" },
+          { text: "Спрятаться в подвале", next: "basement" }
+        ]
+      },
+      fight: {
+        text: "Ты держишься всю ночь. Утром — тишина. Но дверь сломана, и они вернутся.",
+        choices: [
+          { text: "Уходить", next: "pack" },
+          { text: "Остаться ещё на день", next: "alone" }
+        ]
+      },
+      forest: {
+        text: "Лес тихий. Слишком тихий. Где-то вдалеке — лай собак. Или это не собаки.",
+        choices: [
+          { text: "Идти на звук", next: "win" },
+          { text: "Свернуть в сторону", next: "dark" }
+        ]
+      },
+      garage: {
+        text: "В гараже — аккумулятор, но он тоже сел. На полке — канистра бензина и спички.",
+        choices: [
+          { text: "Взять бензин", next: "drive" },
+          { text: "Идти пешком", next: "forest" }
+        ]
+      },
+      tunnel: {
+        text: "В туннеле темно. Ты слышишь капли воды и... шаги. Много шагов.",
+        choices: [
+          { text: "Бежать вперёд", next: "win" },
+          { text: "Назад", next: "metro" }
+        ]
+      },
+      heli: {
+        text: "Ты добираешься до вертолёта. Военные берут тебя на борт. Но мест мало.",
+        choices: [
+          { text: "Лететь", next: "win" },
+          { text: "Уступить место ребёнку", next: "hero" }
+        ]
+      },
+      basement: {
+        text: "В подвале темно. Ты находишь люк. Он ведёт в канализацию.",
+        choices: [
+          { text: "Лезть в люк", next: "tunnel" },
+          { text: "Остаться здесь", next: "dark" }
+        ]
+      },
+      drive: {
+        text: "Ты заводишь машину. Дорога свободна. Но бензин кончается через 20 км.",
+        choices: [
+          { text: "Ехать к базе", next: "win" },
+          { text: "Бросить машину и идти", next: "forest" }
+        ]
+      },
+      dark: {
+        text: "Ты один в темноте. Холодно. Голодно. И они совсем рядом.",
+        end: true,
+        endEmoji: "💀",
+        endTitle: "Конец",
+        endText: "Ты не дожил до утра. Город забрал ещё одного."
+      },
+      win: {
+        text: "Ты добираешься до безопасной зоны. Живой. Наконец-то можно выдохнуть.",
+        end: true,
+        endEmoji: "🏕️",
+        endTitle: "Выжил!",
+        endText: "Ты прошёл через ад и остался собой. Но мир уже не будет прежним."
+      },
+      hero: {
+        text: "Ты уступаешь место. Вертолёт улетает без тебя. Но ты спас ребёнка.",
+        end: true,
+        endEmoji: "🕊️",
+        endTitle: "Герой",
+        endText: "Ты остался в городе. Но твой поступок запомнят."
+      }
+    }
+  },
+
+  space: {
+    title: "Космический корабль",
+    emoji: "🚀",
+    description: "Ты проснулся от сирены. Экипаж исчез. Корабль летит в никуда.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Сирена воет. Ты в капсуле. Рядом — пустые кресла. На экране: «Курс сбит. Экипаж: 1».",
+        choices: [
+          { text: "Проверить рубку", next: "bridge" },
+          { text: "Зайти в медотсек", next: "med" },
+          { text: "Проверить двигатели", next: "engine" }
+        ]
+      },
+      bridge: {
+        text: "Рубка пуста. На главном экране — курс на чёрную дыру. Автопилот сломан.",
+        choices: [
+          { text: "Попробовать сменить курс", next: "course" },
+          { text: "Искать капитана", next: "med" }
+        ]
+      },
+      med: {
+        text: "В медотсеке — следы борьбы. На столе — шприц с зелёной жидкостью. И записка: «Не верь им».",
+        choices: [
+          { text: "Взять шприц", next: "syringe" },
+          { text: "Идти в рубку", next: "bridge" }
+        ]
+      },
+      engine: {
+        text: "Двигатели работают на 30%. Один из них повреждён. Рядом — следы ремонта. Свежие.",
+        choices: [
+          { text: "Починить", next: "fix" },
+          { text: "Вернуться в рубку", next: "bridge" }
+        ]
+      },
+      course: {
+        text: "Ты вводишь новый курс. Корабль начинает разворот. Но система запрашивает код капитана.",
+        choices: [
+          { text: "Взломать", next: "hack" },
+          { text: "Искать код", next: "med" }
+        ]
+      },
+      syringe: {
+        text: "Жидкость светится. На этикетке — «Сыворотка правды». Кто-то хотел, чтобы экипаж говорил.",
+        choices: [
+          { text: "Ввести себе", next: "truth" },
+          { text: "Выбросить", next: "bridge" }
+        ]
+      },
+      fix: {
+        text: "Ты чинишь двигатель. Но слышишь звук за спиной. Кто-то здесь. Не человек.",
+        choices: [
+          { text: "Обернуться", next: "alien" },
+          { text: "Бежать в рубку", next: "bridge" }
+        ]
+      },
+      hack: {
+        text: "Код взломан. Курс изменён. Но на экране появляется лицо. Это капитан. Он жив.",
+        choices: [
+          { text: "Связаться", next: "captain" },
+          { text: "Игнорировать", next: "alone" }
+        ]
+      },
+      truth: {
+        text: "Сыворотка действует. Ты вспоминаешь: экипаж исчез не просто так. Они ушли сами.",
+        choices: [
+          { text: "Искать их", next: "captain" },
+          { text: "Улетать одному", next: "alone" }
+        ]
+      },
+      alien: {
+        text: "Перед тобой — существо. Оно не агрессивно. Оно протягивает тебе руку.",
+        choices: [
+          { text: "Пожать", next: "friend" },
+          { text: "Атаковать", next: "fight" }
+        ]
+      },
+      captain: {
+        text: "Капитан на связи. Он на другой стороне корабля. Говорит, что там — выход.",
+        choices: [
+          { text: "Идти к нему", next: "meet" },
+          { text: "Не верить", next: "alone" }
+        ]
+      },
+      friend: {
+        text: "Существо ведёт тебя к спасательной капсуле. Оно хочет помочь.",
+        choices: [
+          { text: "Сесть в капсулу", next: "win" },
+          { text: "Остаться с ним", next: "stay" }
+        ]
+      },
+      fight: {
+        text: "Ты атакуешь. Существо защищается. В схватке ты теряешь сознание.",
+        end: true,
+        endEmoji: "💫",
+        endTitle: "Конец",
+        endText: "Ты очнулся один. Корабль летит дальше. В никуда."
+      },
+      meet: {
+        text: "Ты находишь капитана. Он ранен. Рядом — спасательная капсула на двоих.",
+        choices: [
+          { text: "Взять его с собой", next: "win" },
+          { text: "Улететь одному", next: "alone" }
+        ]
+      },
+      alone: {
+        text: "Ты один. Корабль летит к чёрной дыре. Времени мало.",
+        end: true,
+        endEmoji: "🕳️",
+        endTitle: "Один в космосе",
+        endText: "Ты остался один. И никто не узнает, что здесь произошло."
+      },
+      stay: {
+        text: "Ты остаёшься с существом. Оно показывает тебе звёзды. Ты больше не один.",
+        end: true,
+        endEmoji: "👽",
+        endTitle: "Новый друг",
+        endText: "Ты не вернулся на Землю. Но нашёл то, что искал."
+      },
+      win: {
+        text: "Капсула отстыковалась. Ты летишь к Земле. Позади — корабль и его тайны.",
+        end: true,
+        endEmoji: "🌍",
+        endTitle: "Спасён!",
+        endText: "Ты выжил. Но никогда не забудешь, что видел там."
+      }
+    }
+  },
+
+  detective: {
+    title: "Детектив: пропавшая девушка",
+    emoji: "🕵️",
+    description: "Ты — частный детектив. Тебе заказали найти пропавшую девушку. Срок — 3 дня.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Офис. Ночь. На столе — фото девушки. Анна, 24 года. Пропала 5 дней назад. Последний раз её видели у клуба «Неон».",
+        choices: [
+          { text: "Поехать в клуб", next: "club" },
+          { text: "Поговорить с подругой", next: "friend" },
+          { text: "Изучить соцсети", next: "social" }
+        ]
+      },
+      club: {
+        text: "Клуб закрыт. Охранник говорит: «Она ушла с парнем в чёрной машине». Номер не запомнил.",
+        choices: [
+          { text: "Посмотреть камеры", next: "cams" },
+          { text: "Найти парня", next: "boyfriend" }
+        ]
+      },
+      friend: {
+        text: "Подруга плачет. Говорит: «У неё был тайный парень. Она боялась его».",
+        choices: [
+          { text: "Узнать имя", next: "boyfriend" },
+          { text: "Проверить её квартиру", next: "flat" }
+        ]
+      },
+      social: {
+        text: "В соцсетях — последний пост за день до пропажи. Фото из кафе. На фоне — мужчина.",
+        choices: [
+          { text: "Пробить по базе", next: "boyfriend" },
+          { text: "Поехать в кафе", next: "cafe" }
+        ]
+      },
+      cams: {
+        text: "На записи — чёрная машина. Номер виден частично: А***МР. Владелец — бизнесмен Игорь С.",
+        choices: [
+          { text: "Ехать к нему", next: "boyfriend" },
+          { text: "Проверить его связи", next: "flat" }
+        ]
+      },
+      cafe: {
+        text: "В кафе помнят Анну. Бармен говорит: «Она ждала кого-то. Нервничала. Потом ушла с мужчиной».",
+        choices: [
+          { text: "Найти мужчину", next: "boyfriend" },
+          { text: "Проверить записи", next: "cams" }
+        ]
+      },
+      boyfriend: {
+        text: "Игорь С. — владелец клуба. Богат, влиятелен. У него алиби. Но что-то не сходится.",
+        choices: [
+          { text: "Давить на него", next: "press" },
+          { text: "Следить", next: "shadow" }
+        ]
+      },
+      flat: {
+        text: "Квартира Анны. Всё на месте. Но под кроватью — телефон. Второй. С одним контактом: «Он».",
+        choices: [
+          { text: "Позвонить", next: "call" },
+          { text: "Пробить номер", next: "boyfriend" }
+        ]
+      },
+      press: {
+        text: "Игорь нервничает. Говорит: «Она сама уехала. Я не при чём». Но на столе — билет в одну сторону.",
+        choices: [
+          { text: "Забрать билет", next: "ticket" },
+          { text: "Уйти и следить", next: "shadow" }
+        ]
+      },
+      shadow: {
+        text: "Ты следишь за Игорем. Он едет за город. К заброшенному складу.",
+        choices: [
+          { text: "Идти за ним", next: "warehouse" },
+          { text: "Вызвать полицию", next: "police" }
+        ]
+      },
+      call: {
+        text: "Ты звонишь. На другом конце — женский голос. Это Анна. Она жива.",
+        choices: [
+          { text: "Узнать, где она", next: "rescue" },
+          { text: "Спросить, почему скрывается", next: "truth" }
+        ]
+      },
+      ticket: {
+        text: "Билет на имя Анны. Дата — день пропажи. Она собиралась уехать. Одна.",
+        choices: [
+          { text: "Искать её", next: "warehouse" },
+          { text: "Поговорить с Игорем", next: "press" }
+        ]
+      },
+      warehouse: {
+        text: "Склад. Внутри — свет. Ты слышишь голоса. Один — Анны. Второй — мужской.",
+        choices: [
+          { text: "Ворваться", next: "rescue" },
+          { text: "Подслушать", next: "truth" }
+        ]
+      },
+      police: {
+        text: "Полиция приезжает. Но Игорь уже уехал. Ты потерял его.",
+        choices: [
+          { text: "Искать самому", next: "warehouse" },
+          { text: "Сдаться", next: "fail" }
+        ]
+      },
+      rescue: {
+        text: "Ты врываешься. Анна связана. Рядом — Игорь. Он не ожидал тебя.",
+        choices: [
+          { text: "Скрутить его", next: "win" },
+          { text: "Дать ему уйти", next: "half" }
+        ]
+      },
+      truth: {
+        text: "Ты слышишь: Анна шантажировала Игоря. Она знала его тайну. Он хотел её остановить.",
+        choices: [
+          { text: "Вмешаться", next: "rescue" },
+          { text: "Уйти", next: "half" }
+        ]
+      },
+      fail: {
+        text: "Ты не нашёл Анну. Дело закрыто. Но ты знаешь — она где-то там.",
+        end: true,
+        endEmoji: "🚬",
+        endTitle: "Провал",
+        endText: "Иногда детективы проигрывают. Это был тот случай."
+      },
+      half: {
+        text: "Ты ушёл. Анна осталась. Но ты знаешь правду. И это тебя не отпустит.",
+        end: true,
+        endEmoji: "🌧️",
+        endTitle: "Полуправда",
+        endText: "Ты спас себя, но не её. Иногда это худший выбор."
+      },
+      win: {
+        text: "Игорь арестован. Анна спасена. Ты — лучший детектив в городе.",
+        end: true,
+        endEmoji: "🏆",
+        endTitle: "Дело закрыто!",
+        endText: "Ещё одно дело в копилку. Но сколько их ещё будет?"
+      }
+    }
+  },
+
+  wizard: {
+    title: "Башня мага",
+    emoji: "🧙",
+    description: "Ты — ученик мага. Учитель исчез. Башня полна ловушек. Найди его.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты в башне учителя. Дверь заперта магией. На столе — записка: «Ищи меня на верхнем этаже. Не верь зеркалам».",
+        choices: [
+          { text: "Идти в библиотеку", next: "library" },
+          { text: "Подняться по лестнице", next: "stairs" },
+          { text: "Осмотреть зал", next: "hall" }
+        ]
+      },
+      library: {
+        text: "Книги летают сами. Одна открывается на странице: «Зеркала — порталы. Не смотри в них».",
+        choices: [
+          { text: "Взять книгу", next: "book" },
+          { text: "Идти дальше", next: "stairs" }
+        ]
+      },
+      stairs: {
+        text: "Лестница винтовая. На стене — зеркало. В нём — ты. Но отражение улыбается.",
+        choices: [
+          { text: "Не смотреть", next: "up" },
+          { text: "Заглянуть", next: "mirror" }
+        ]
+      },
+      hall: {
+        text: "В зале — пентаграмма. В центре — кристалл. Он светится и пульсирует.",
+        choices: [
+          { text: "Взять кристалл", next: "crystal" },
+          { text: "Оставить", next: "library" }
+        ]
+      },
+      book: {
+        text: "Книга шепчет: «Учитель в зеркале. Но не в том, что ты видишь».",
+        choices: [
+          { text: "Искать другое зеркало", next: "up" },
+          { text: "Спросить книгу", next: "ask" }
+        ]
+      },
+      mirror: {
+        text: "Отражение выходит из зеркала. Это ты. Но злой. Он атакует.",
+        choices: [
+          { text: "Сражаться", next: "fight" },
+          { text: "Бежать", next: "up" }
+        ]
+      },
+      crystal: {
+        text: "Кристалл в руке. Ты чувствуешь силу. Но слышишь голос: «Отпусти. Это ловушка».",
+        choices: [
+          { text: "Отпустить", next: "up" },
+          { text: "Оставить себе", next: "dark" }
+        ]
+      },
+      ask: {
+        text: "Книга говорит: «Учитель в последнем зеркале. На крыше. Но оно разбито».",
+        choices: [
+          { text: "Идти на крышу", next: "roof" },
+          { text: "Искать осколки", next: "shards" }
+        ]
+      },
+      fight: {
+        text: "Ты побеждаешь отражение. Но оно рассыпается со словами: «Ты уже не тот».",
+        choices: [
+          { text: "Идти дальше", next: "up" },
+          { text: "Проверить себя", next: "check" }
+        ]
+      },
+      up: {
+        text: "Ты поднимаешься выше. Этаж пуст. Только дверь с надписью: «Только правда».",
+        choices: [
+          { text: "Открыть", next: "truth" },
+          { text: "Искать другой путь", next: "roof" }
+        ]
+      },
+      roof: {
+        text: "Крыша. Ветер. Разбитое зеркало. В осколках — учитель. Он заперт.",
+        choices: [
+          { text: "Собрать осколки", next: "shards" },
+          { text: "Разбить зеркало", next: "break" }
+        ]
+      },
+      shards: {
+        text: "Ты собираешь осколки. Они режут руки. Но в отражении учитель становится чётче.",
+        choices: [
+          { text: "Продолжать", next: "win" },
+          { text: "Бросить", next: "dark" }
+        ]
+      },
+      truth: {
+        text: "Дверь открывается. За ней — учитель. Он ждал тебя. «Ты прошёл. Теперь ты — маг».",
+        choices: [
+          { text: "Принять", next: "win" },
+          { text: "Отказаться", next: "dark" }
+        ]
+      },
+      break: {
+        text: "Ты разбиваешь зеркало. Учитель исчезает. Ты слышишь его голос: «Ты ошибся».",
+        choices: [
+          { text: "Искать другой выход", next: "shards" },
+          { text: "Сдаться", next: "dark" }
+        ]
+      },
+      check: {
+        text: "Ты смотришь в зеркало. Твоё отражение обычно. Но глаза — не твои.",
+        choices: [
+          { text: "Идти дальше", next: "up" },
+          { text: "Бороться", next: "fight" }
+        ]
+      },
+      dark: {
+        text: "Тьма поглощает тебя. Башня закрывается. Ты остаёшься внутри. Навсегда.",
+        end: true,
+        endEmoji: "🌑",
+        endTitle: "Тьма",
+        endText: "Магия не прощает ошибок. Ты стал частью башни."
+      },
+      win: {
+        text: "Учитель свободен. Ты — новый маг. Башня признала тебя.",
+        end: true,
+        endEmoji: "🔮",
+        endTitle: "Маг!",
+        endText: "Ты прошёл путь ученика. Теперь твой путь — учить других."
+      }
+    }
+  },
+
+  heist: {
+    title: "Ограбление банка",
+    emoji: "💰",
+    description: "Ты — вор. План готов. Осталось войти, взять деньги и выйти.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты перед банком. Ночь. Камеры, охрана, сигнализация. У тебя 15 минут.",
+        choices: [
+          { text: "Войти через главный вход", next: "front" },
+          { text: "Через крышу", next: "roof" },
+          { text: "Через подвал", next: "basement" }
+        ]
+      },
+      front: {
+        text: "Главный вход открыт. Внутри — охрана. Один охранник смотрит в телефон.",
+        choices: [
+          { text: "Оглушить", next: "guard" },
+          { text: "Обойти", next: "vault" }
+        ]
+      },
+      roof: {
+        text: "На крыше — вентиляция. Она ведёт прямо в хранилище. Но решётка заварена.",
+        choices: [
+          { text: "Срезать решётку", next: "vault" },
+          { text: "Искать другой путь", next: "front" }
+        ]
+      },
+      basement: {
+        text: "Подвал. Тут старые трубы. Одна ведёт к хранилищу. Но там датчики движения.",
+        choices: [
+          { text: "Отключить датчики", next: "vault" },
+          { text: "Рискнуть", next: "alarm" }
+        ]
+      },
+      guard: {
+        text: "Охранник без сознания. Ты берёшь его ключ-карту. Но камера записала момент.",
+        choices: [
+          { text: "Стереть запись", next: "cams" },
+          { text: "Быстрее к хранилищу", next: "vault" }
+        ]
+      },
+      cams: {
+        text: "Ты стираешь запись. Но система требует пароль администратора.",
+        choices: [
+          { text: "Взломать", next: "vault" },
+          { text: "Бросить", next: "alarm" }
+        ]
+      },
+      vault: {
+        text: "Хранилище. Дверь — толстая сталь. Кодовый замок. У тебя есть ключ-карта, но нужен код.",
+        choices: [
+          { text: "Взломать замок", next: "hack" },
+          { text: "Искать код", next: "office" }
+        ]
+      },
+      office: {
+        text: "Кабинет управляющего. На столе — фото. На обороте — дата: 07.11.1989.",
+        choices: [
+          { text: "Ввести дату", next: "open" },
+          { text: "Искать дальше", next: "vault" }
+        ]
+      },
+      hack: {
+        text: "Замок взломан. Дверь открывается. Внутри — горы денег. Но срабатывает тихая сигнализация.",
+        choices: [
+          { text: "Брать всё и бежать", next: "grab" },
+          { text: "Брать только нужное", next: "smart" }
+        ]
+      },
+      open: {
+        text: "Код подошёл. Дверь открыта. Деньги перед тобой. Но время — 5 минут.",
+        choices: [
+          { text: "Брать всё", next: "grab" },
+          { text: "Брать сколько унесёшь", next: "smart" }
+        ]
+      },
+      alarm: {
+        text: "Сигнализация воет. Охрана бежит. Ты ещё в банке. Времени нет.",
+        choices: [
+          { text: "Бежать к выходу", next: "escape" },
+          { text: "Спрятаться", next: "hide" }
+        ]
+      },
+      grab: {
+        text: "Ты набиваешь сумку деньгами. Она тяжёлая. Бежать будет сложно.",
+        choices: [
+          { text: "Бежать с деньгами", next: "escape" },
+          { text: "Бросить часть", next: "smart" }
+        ]
+      },
+      smart: {
+        text: "Ты берёшь только самое ценное. Сумка лёгкая. Ты быстр.",
+        choices: [
+          { text: "Уходить через крышу", next: "win" },
+          { text: "Через главный вход", next: "escape" }
+        ]
+      },
+      escape: {
+        text: "Ты выбегаешь. Полиция уже рядом. Машина ждёт за углом.",
+        choices: [
+          { text: "Прыгнуть в машину", next: "win" },
+          { text: "Бежать пешком", next: "caught" }
+        ]
+      },
+      hide: {
+        text: "Ты прячешься в шкафу. Охрана проходит мимо. Но они знают, что ты здесь.",
+        choices: [
+          { text: "Ждать", next: "wait" },
+          { text: "Бежать", next: "escape" }
+        ]
+      },
+      wait: {
+        text: "Ты ждёшь час. Тишина. Выходишь. Но у выхода — полиция.",
+        end: true,
+        endEmoji: "🚔",
+        endTitle: "Пойман",
+        endText: "Тебя взяли. Деньги вернули. Свобода — нет."
+      },
+      caught: {
+        text: "Тебя догнали. Наручники. Сирены. Всё кончено.",
+        end: true,
+        endEmoji: "🚔",
+        endTitle: "Пойман",
+        endText: "План был хорош. Но не идеален."
+      },
+      win: {
+        text: "Машина уносит тебя в ночь. Деньги у тебя. Ты чист.",
+        end: true,
+        endEmoji: "🤑",
+        endTitle: "Успех!",
+        endText: "Ограбление века. И никто не узнает, кто это сделал."
+      }
+    }
+  },
+
+  school: {
+    title: "Тайна школы",
+    emoji: "🏫",
+    description: "В школе пропадают вещи. Ты — ученик, который решил разобраться.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Урок закончился. Из раздевалки пропали кроссовки. Директор злится. Ты решаешь найти вора.",
+        choices: [
+          { text: "Осмотреть раздевалку", next: "locker" },
+          { text: "Поговорить с одноклассниками", next: "class" },
+          { text: "Проверить камеры", next: "cams" }
+        ]
+      },
+      locker: {
+        text: "В раздевалке — открытое окно. На полу — следы грязи. Кто-то вылезал.",
+        choices: [
+          { text: "Пойти по следам", next: "trail" },
+          { text: "Спросить у охранника", next: "guard" }
+        ]
+      },
+      class: {
+        text: "Одноклассники шепчутся. Один говорит: «Это Витя. Он всегда что-то тащит».",
+        choices: [
+          { text: "Поговорить с Витей", next: "vitya" },
+          { text: "Проверить его рюкзак", next: "bag" }
+        ]
+      },
+      cams: {
+        text: "Камеры в коридоре. На записи — фигура в капюшоне. Лица не видно. Но рост — не Витя.",
+        choices: [
+          { text: "Сравнить с учениками", next: "compare" },
+          { text: "Показать директору", next: "director" }
+        ]
+      },
+      trail: {
+        text: "Следы ведут к спортзалу. Дверь приоткрыта. Внутри — свет.",
+        choices: [
+          { text: "Войти", next: "gym" },
+          { text: "Позвать кого-то", next: "class" }
+        ]
+      },
+      guard: {
+        text: "Охранник говорит: «Ночью кто-то ходил по школе. Я слышал шаги, но никого не видел».",
+        choices: [
+          { text: "Остаться на ночь", next: "night" },
+          { text: "Искать дальше", next: "gym" }
+        ]
+      },
+      vitya: {
+        text: "Витя злится: «Я не брал! Но я знаю, кто. Это не ученик».",
+        choices: [
+          { text: "Узнать, кто", next: "truth" },
+          { text: "Не верить", next: "bag" }
+        ]
+      },
+      bag: {
+        text: "В рюкзаке Вити — чужие вещи. Но он говорит: «Мне подкинули».",
+        choices: [
+          { text: "Поверить", next: "truth" },
+          { text: "Сдать директору", next: "director" }
+        ]
+      },
+      compare: {
+        text: "Ты сравниваешь рост. Это... учитель физкультуры. Он ходит по школе ночью.",
+        choices: [
+          { text: "Проследить за ним", next: "night" },
+          { text: "Рассказать всем", next: "director" }
+        ]
+      },
+      gym: {
+        text: "В спортзале — склад украденных вещей. И учитель физкультуры. Он берёт вещи для «нужд школы».",
+        choices: [
+          { text: "Снять на телефон", next: "win" },
+          { text: "Убежать", next: "fail" }
+        ]
+      },
+      night: {
+        text: "Ты остаёшься в школе на ночь. В 2 часа ночи слышишь шаги. Это он.",
+        choices: [
+          { text: "Идти за ним", next: "gym" },
+          { text: "Вызвать полицию", next: "police" }
+        ]
+      },
+      truth: {
+        text: "Витя говорит: «Это учитель физры. Он забирает вещи и продаёт».",
+        choices: [
+          { text: "Проверить", next: "night" },
+          { text: "Сразу директору", next: "director" }
+        ]
+      },
+      director: {
+        text: "Директор не верит. «Учитель — уважаемый человек. А ты — ученик».",
+        choices: [
+          { text: "Найти доказательства", next: "night" },
+          { text: "Сдаться", next: "fail" }
+        ]
+      },
+      police: {
+        text: "Полиция приезжает. Учитель пойман с поличным. Ты — герой школы.",
+        choices: [
+          { text: "Признаться, что это ты", next: "win" },
+          { text: "Остаться в тени", next: "win" }
+        ]
+      },
+      fail: {
+        text: "Ты не смог доказать. Учитель остался. Вещи продолжают пропадать.",
+        end: true,
+        endEmoji: "😔",
+        endTitle: "Неудача",
+        endText: "Иногда правда не побеждает. Но ты tried."
+      },
+      win: {
+        text: "Учитель уволен. Вещи возвращены. Ты — тот, кто раскрыл тайну школы.",
+        end: true,
+        endEmoji: "🕵️",
+        endTitle: "Дело раскрыто!",
+        endText: "Школа снова спокойна. Но ты теперь знаешь — тут всегда что-то происходит."
+      }
+    }
+  },
+
+  island: {
+    title: "Необитаемый остров",
+    emoji: "🏝️",
+    description: "Самолёт упал. Ты один на острове. Нужно выжить и выбраться.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты на берегу. Самолёт разбит. Вокруг — джунгли. Еды нет. Воды нет.",
+        choices: [
+          { text: "Искать воду", next: "water" },
+          { text: "Осмотреть обломки", next: "wreck" },
+          { text: "Идти в джунгли", next: "jungle" }
+        ]
+      },
+      water: {
+        text: "Ты находишь ручей. Вода чистая. Но рядом — следы животного. Большого.",
+        choices: [
+          { text: "Пить", next: "drink" },
+          { text: "Идти дальше", next: "jungle" }
+        ]
+      },
+      wreck: {
+        text: "В обломках — аптечка, нож, рация. Рация сломана, но можно починить.",
+        choices: [
+          { text: "Починить рацию", next: "radio" },
+          { text: "Взять припасы", next: "supplies" }
+        ]
+      },
+      jungle: {
+        text: "Джунгли густые. Ты слышишь звуки. Где-то там — хижина. Старая.",
+        choices: [
+          { text: "Идти к хижине", next: "hut" },
+          { text: "Вернуться на берег", next: "wreck" }
+        ]
+      },
+      drink: {
+        text: "Вода свежая. Ты пьёшь. Но слышишь рычание за спиной.",
+        choices: [
+          { text: "Бежать", next: "run" },
+          { text: "Замереть", next: "freeze" }
+        ]
+      },
+      radio: {
+        text: "Ты чинишь рацию. Слышен сигнал. Кто-то на другой частоте. Но связь слабая.",
+        choices: [
+          { text: "Позвать на помощь", next: "rescue" },
+          { text: "Слушать", next: "listen" }
+        ]
+      },
+      supplies: {
+        text: "У тебя есть нож, аптечка и немного еды. Ты готов к выживанию.",
+        choices: [
+          { text: "Идти в джунгли", next: "jungle" },
+          { text: "Остаться на берегу", next: "beach" }
+        ]
+      },
+      hut: {
+        text: "В хижине — старик. Он живёт здесь 10 лет. Говорит: «Помогу, если поможешь».",
+        choices: [
+          { text: "Согласиться", next: "deal" },
+          { text: "Уйти", next: "jungle" }
+        ]
+      },
+      run: {
+        text: "Ты бежишь. Ветки хлещут лицо. Но ты слышишь — зверь отстал.",
+        choices: [
+          { text: "Идти к берегу", next: "wreck" },
+          { text: "Спрятаться", next: "hide" }
+        ]
+      },
+      freeze: {
+        text: "Ты замираешь. Зверь подходит. Нюхает. Уходит. Ты жив.",
+        choices: [
+          { text: "Идти дальше", next: "jungle" },
+          { text: "Вернуться", next: "wreck" }
+        ]
+      },
+      rescue: {
+        text: "Ты вызываешь помощь. Голос отвечает: «Держись. Мы идём».",
+        choices: [
+          { text: "Ждать на берегу", next: "win" },
+          { text: "Идти навстречу", next: "meet" }
+        ]
+      },
+      listen: {
+        text: "Ты слышишь: «...остров... опасность... не приближайтесь». Это предупреждение.",
+        choices: [
+          { text: "Игнорировать", next: "rescue" },
+          { text: "Искать причину", next: "hut" }
+        ]
+      },
+      deal: {
+        text: "Старик даёт тебе лодку. Но просит найти его семью на материке.",
+        choices: [
+          { text: "Согласиться", next: "win" },
+          { text: "Отказаться", next: "alone" }
+        ]
+      },
+      beach: {
+        text: "Ты на берегу. Видишь корабль на горизонте. Но он далеко.",
+        choices: [
+          { text: "Разжечь костёр", next: "win" },
+          { text: "Плыть", next: "swim" }
+        ]
+      },
+      hide: {
+        text: "Ты прячешься в пещере. Внутри — старые рисунки. Люди жили здесь.",
+        choices: [
+          { text: "Изучить", next: "hut" },
+          { text: "Вернуться", next: "wreck" }
+        ]
+      },
+      meet: {
+        text: "Ты идёшь навстречу. Но это не спасатели. Это пираты.",
+        choices: [
+          { text: "Бежать", next: "run" },
+          { text: "Сдаться", next: "captured" }
+        ]
+      },
+      swim: {
+        text: "Ты плывёшь. Силы кончаются. Корабль ближе. Но волны высокие.",
+        choices: [
+          { text: "Плыть дальше", next: "win" },
+          { text: "Вернуться", next: "beach" }
+        ]
+      },
+      alone: {
+        text: "Ты остаёшься один. Лодки нет. Надежды тоже.",
+        end: true,
+        endEmoji: "🌊",
+        endTitle: "Один",
+        endText: "Остров не отпустил тебя. Ты остался здесь навсегда."
+      },
+      captured: {
+        text: "Пираты берут тебя в плен. Ты больше не увидишь дом.",
+        end: true,
+        endEmoji: "🏴‍☠️",
+        endTitle: "Плен",
+        endText: "Иногда лучше не идти навстречу неизвестному."
+      },
+      win: {
+        text: "Тебя спасают. Ты возвращаешься домой. Но остров снится тебе каждую ночь.",
+        end: true,
+        endEmoji: "🚁",
+        endTitle: "Спасён!",
+        endText: "Ты выжил. Но часть тебя осталась на том острове."
+      }
+    }
+  },
+
+  cyber: {
+    title: "Киберпанк: украденная личность",
+    emoji: "🌃",
+    description: "В 2077 году твои данные украли. Ты — никто. Нужно вернуть себя.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Ты просыпаешься в капсуле. На руке — чужой чип. Твоё имя стёрто из всех баз.",
+        choices: [
+          { text: "Проверить чип", next: "chip" },
+          { text: "Идти в бар", next: "bar" },
+          { text: "Найти хакера", next: "hacker" }
+        ]
+      },
+      chip: {
+        text: "На чипе — данные. Чужая жизнь. Кто-то украл твою и подменил.",
+        choices: [
+          { text: "Прочитать", next: "read" },
+          { text: "Уничтожить", next: "bar" }
+        ]
+      },
+      bar: {
+        text: "Бар «Неон». Здесь все всё знают. Бармен смотрит на тебя: «Ты — призрак».",
+        choices: [
+          { text: "Спросить о себе", next: "info" },
+          { text: "Найти хакера", next: "hacker" }
+        ]
+      },
+      hacker: {
+        text: "Хакер по кличке Крот. Он может вернуть твои данные. Но просит услугу.",
+        choices: [
+          { text: "Согласиться", next: "deal" },
+          { text: "Искать другого", next: "bar" }
+        ]
+      },
+      read: {
+        text: "Ты читаешь чужую жизнь. Это жизнь корпората. Он украл твою, чтобы скрыться.",
+        choices: [
+          { text: "Найти его", next: "corp" },
+          { text: "Уничтожить чип", next: "bar" }
+        ]
+      },
+      info: {
+        text: "Бармен говорит: «Тебя ищет корпорация. Ты — опасен».",
+        choices: [
+          { text: "Бежать", next: "run" },
+          { text: "Узнать больше", next: "hacker" }
+        ]
+      },
+      deal: {
+        text: "Крот даёт тебе адрес. Там — сервер с твоими данными. Но там охрана.",
+        choices: [
+          { text: "Идти", next: "server" },
+          { text: "Подготовиться", next: "gear" }
+        ]
+      },
+      corp: {
+        text: "Ты находишь корпората. Он смеётся: «Твоя жизнь теперь моя».",
+        choices: [
+          { text: "Атаковать", next: "fight" },
+          { text: "Предложить сделку", next: "negotiate" }
+        ]
+      },
+      run: {
+        text: "Ты бежишь по неоновым улицам. Дроны преследуют. Впереди — метро.",
+        choices: [
+          { text: "В метро", next: "metro" },
+          { text: "В переулок", next: "alley" }
+        ]
+      },
+      gear: {
+        text: "Ты покупаешь оружие и броню. Теперь ты готов.",
+        choices: [
+          { text: "Идти на сервер", next: "server" },
+          { text: "Найти союзников", next: "bar" }
+        ]
+      },
+      server: {
+        text: "Серверная. Охрана. Но у тебя есть план.",
+        choices: [
+          { text: "Взломать", next: "hack" },
+          { text: "Прорваться", next: "fight" }
+        ]
+      },
+      negotiate: {
+        text: "Корпорат согласен вернуть данные. Но взамен просит твою помощь.",
+        choices: [
+          { text: "Согласиться", next: "win" },
+          { text: "Обмануть", next: "betray" }
+        ]
+      },
+      fight: {
+        text: "Ты побеждаешь охрану. Но сервер уничтожен. Данные потеряны.",
+        end: true,
+        endEmoji: "💥",
+        endTitle: "Потеря",
+        endText: "Ты свободен, но никто. Твоя жизнь стёрта навсегда."
+      },
+      hack: {
+        text: "Ты взламываешь сервер. Данные восстанавливаются. Ты снова — ты.",
+        choices: [
+          { text: "Скачать", next: "win" },
+          { text: "Уничтожить корпорацию", next: "revenge" }
+        ]
+      },
+      metro: {
+        text: "В метро — толпа. Дроны теряют тебя. Но здесь — опасные люди.",
+        choices: [
+          { text: "Смешаться с толпой", next: "bar" },
+          { text: "В туннель", next: "hacker" }
+        ]
+      },
+      alley: {
+        text: "В переулке — тупик. Дроны близко. Ты слышишь шаги.",
+        choices: [
+          { text: "Сражаться", next: "fight" },
+          { text: "Сдаться", next: "caught" }
+        ]
+      },
+      betray: {
+        text: "Ты обманываешь корпората. Он теряет всё. Но и ты — тоже.",
+        end: true,
+        endEmoji: "🎭",
+        endTitle: "Обман",
+        endText: "Ты вернул данные, но потерял себя. Иногда месть — не выход."
+      },
+      revenge: {
+        text: "Ты уничтожаешь корпорацию. Но твои данные — тоже. Ты — никто. Но свободен.",
+        end: true,
+        endEmoji: "🔥",
+        endTitle: "Месть",
+        endText: "Ты сжёг всё. Но стал призраком в этом городе."
+      },
+      caught: {
+        text: "Дроны берут тебя. Ты снова в капсуле. Но теперь — навсегда.",
+        end: true,
+        endEmoji: "🔒",
+        endTitle: "Плен",
+        endText: "Система победила. Ты — её часть."
+      },
+      win: {
+        text: "Ты возвращаешься. Твоё имя снова в базе. Ты — ты.",
+        end: true,
+        endEmoji: "🌆",
+        endTitle: "Свобода!",
+        endText: "В мире, где всё продаётся, ты вернул себя. Это дорогого стоит."
+      }
+    }
+  },
+
+  pirate: {
+    title: "Пиратский корабль",
+    emoji: "🏴‍☠️",
+    description: "Ты — юнга на пиратском корабле. Капитан болен. Команда хочет бунта.",
+    start: "start",
+    scenes: {
+      start: {
+        text: "Шторм. Капитан в каюте. Команда шепчется: «Пора сменить капитана».",
+        choices: [
+          { text: "Поддержать капитана", next: "captain" },
+          { text: "Присоединиться к бунту", next: "mutiny" },
+          { text: "Остаться в стороне", next: "neutral" }
+        ]
+      },
+      captain: {
+        text: "Капитан болен, но мудр. Он говорит: «Найди карту. Она спасёт нас».",
+        choices: [
+          { text: "Искать карту", next: "map" },
+          { text: "Защищать капитана", next: "defend" }
+        ]
+      },
+      mutiny: {
+        text: "Бунтовщики во главе с боцманом. Они предлагают тебе место в команде.",
+        choices: [
+          { text: "Согласиться", next: "join" },
+          { text: "Предать их", next: "captain" }
+        ]
+      },
+      neutral: {
+        text: "Ты в стороне. Но обе стороны хотят твоей поддержки.",
+        choices: [
+          { text: "Выбрать капитана", next: "captain" },
+          { text: "Выбрать бунт", next: "join" }
+        ]
+      },
+      map: {
+        text: "Карта в сундуке. Но сундук заперт. Ключ у боцмана.",
+        choices: [
+          { text: "Украсть ключ", next: "steal" },
+          { text: "Сломать замок", next: "break" }
+        ]
+      },
+      defend: {
+        text: "Ты защищаешь капитана. Бунтовщики атакуют. Но капитан встаёт.",
+        choices: [
+          { text: "Сражаться", next: "fight" },
+          { text: "Убежать", next: "escape" }
+        ]
+      },
+      join: {
+        text: "Ты с бунтовщиками. Боцман говорит: «Капитан должен уйти. Ты — с нами».",
+        choices: [
+          { text: "Идти до конца", next: "mutiny_win" },
+          { text: "Предупредить капитана", next: "captain" }
+        ]
+      },
+      steal: {
+        text: "Ты крадёшь ключ. Открываешь сундук. Карта у тебя. Но боцман заметил.",
+        choices: [
+          { text: "Бежать к капитану", next: "captain" },
+          { text: "Сражаться", next: "fight" }
+        ]
+      },
+      break: {
+        text: "Ты ломаешь замок. Карта у тебя. Но шум привлёк команду.",
+        choices: [
+          { text: "Спрятать карту", next: "hide" },
+          { text: "Отдать капитану", next: "captain" }
+        ]
+      },
+      fight: {
+        text: "Бой на палубе. Шторм усиливается. Корабль тонет.",
+        choices: [
+          { text: "Спасать капитана", next: "save" },
+          { text: "Спасать себя", next: "self" }
+        ]
+      },
+      escape: {
+        text: "Ты прыгаешь в море. Волны накрывают. Впереди — остров.",
+        choices: [
+          { text: "Плыть к острову", next: "island_end" },
+          { text: "Вернуться на корабль", next: "fight" }
+        ]
+      },
+      hide: {
+        text: "Ты прячешь карту. Команда ищет. Капитан умирает.",
+        choices: [
+          { text: "Отдать карту команде", next: "mutiny_win" },
+          { text: "Бежать с картой", next: "escape" }
+        ]
+      },
+      save: {
+        text: "Ты спасаешь капитана. Корабль тонет. Но вы на шлюпке. Карта у вас.",
+        choices: [
+          { text: "Плыть к острову", next: "treasure" },
+          { text: "Ждать помощи", next: "wait" }
+        ]
+      },
+      self: {
+        text: "Ты спасаешь себя. Капитан тонет. Карта уходит на дно.",
+        end: true,
+        endEmoji: "🌊",
+        endTitle: "Трусость",
+        endText: "Ты выжил, но потерял всё. Может, лучше было умереть?"
+      },
+      mutiny_win: {
+        text: "Бунт победил. Боцман — новый капитан. Ты — его правая рука.",
+        end: true,
+        endEmoji: "⚓",
+        endTitle: "Новый капитан",
+        endText: "Ты получил власть. Но цена — предательство."
+      },
+      wait: {
+        text: "Вы ждёте. Через день — корабль. Но это не помощь. Это враги.",
+        choices: [
+          { text: "Сражаться", next: "fight" },
+          { text: "Сдаться", next: "captured_end" }
+        ]
+      },
+      treasure: {
+        text: "Вы на острове. Карта ведёт к пещере. Внутри — золото. И ловушка.",
+        choices: [
+          { text: "Взять золото", next: "rich" },
+          { text: "Оставить", next: "wise" }
+        ]
+      },
+      island_end: {
+        text: "Ты на острове. Один. Без карты. Без команды. Но живой.",
+        end: true,
+        endEmoji: "🏝️",
+        endTitle: "Одиночество",
+        endText: "Ты выжил. Но пиратская жизнь кончена."
+      },
+      captured_end: {
+        text: "Враги берут вас. Капитан погибает. Ты — пленник.",
+        end: true,
+        endEmoji: "⛓️",
+        endTitle: "Плен",
+        endText: "Море не прощает слабости."
+      },
+      rich: {
+        text: "Ты берёшь золото. Ловушка срабатывает. Но ты успеваешь выбежать.",
+        end: true,
+        endEmoji: "💰",
+        endTitle: "Богатство!",
+        endText: "Ты богат. Но капитан погиб. Стоило ли оно того?"
+      },
+      wise: {
+        text: "Ты оставляешь золото. Пещера рушится. Вы уходите с картой и жизнью.",
+        end: true,
+        endEmoji: "🧭",
+        endTitle: "Мудрость",
+        endText: "Ты понял: не всё золото, что блестит. И это спасло тебя."
+      }
+    }
+  }
+};
+
+let currentStory = null;
+
+function renderGameList() {
+  const list = document.getElementById('games-list');
+  list.innerHTML = '';
+  Object.keys(STORIES).forEach(id => {
+    const story = STORIES[id];
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.onclick = () => startGame(id);
+    card.innerHTML = `
+      <div class="emoji">${story.emoji}</div>
+      <div class="info">
+        <h3>${story.title}</h3>
+        <p>${story.description}</p>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function startGame(storyId) {
+  currentStory = STORIES[storyId];
+  document.getElementById('game-title').textContent = currentStory.title;
+  goScene(currentStory.start);
+  showScreen('screen-game');
+}
+
+function goScene(sceneId) {
+  const scene = currentStory.scenes[sceneId];
+  if (!scene) return;
+
+  if (scene.end) {
+    document.getElementById('end-emoji').textContent = scene.endEmoji || "🎬";
+    document.getElementById('end-title').textContent = scene.endTitle || "Конец";
+    document.getElementById('end-text').textContent = scene.endText || "";
+    showScreen('screen-end');
+    return;
+  }
+
+  document.getElementById('scene-text').textContent = scene.text;
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  scene.choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice.text;
+    btn.onclick = () => goScene(choice.next);
+    choicesEl.appendChild(btn);
+  });
+
+  showScreen('screen-game');
+}
+
+function restartGame() {
+  if (currentStory) goScene(currentStory.start);
+}
+
+function goMain() {
+  showScreen('screen-main');
+}
+
+renderGameList();
+
+if (window.Telegram && window.Telegram.WebApp) {
+  window.Telegram.WebApp.ready();
+  window.Telegram.WebApp.expand();
+}
+</script>
+</body>
+</html>
